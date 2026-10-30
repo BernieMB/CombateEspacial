@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Wars - Batalla Espacial</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        #gameContainer {
+            position: relative;
+        }
+
+        canvas {
+            border: 2px solid #1a3a5c;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.3), 0 0 60px rgba(0, 50, 150, 0.1);
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+        }
+
+        .player-info {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 8px;
+            padding: 10px 18px;
+            backdrop-filter: blur(5px);
+        }
+
+        .player-info.player1 {
+            border-color: rgba(0, 200, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 200, 255, 0.15);
+        }
+
+        .player-info.player2 {
+            border-color: rgba(255, 80, 80, 0.5);
+            box-shadow: 0 0 15px rgba(255, 80, 80, 0.15);
+        }
+
+        .player-info h3 {
+            font-size: 14px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .player1 h3 { color: #00c8ff; }
+        .player2 h3 { color: #ff5050; }
+
+        .player-info p {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 10px;
+            padding: 12px 24px;
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+        }
+
+        #controls.hidden {
+            display: none;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .control-group label {
+            font-size: 11px;
+            color: #88aacc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-group input[type="range"] {
+            width: 160px;
+            accent-color: #00c8ff;
+        }
+
+        .control-group .value-display {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00c8ff;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        #fireBtn {
+            background: linear-gradient(180deg, #ff6600, #cc3300);
+            border: none;
+            color: #fff;
+            padding: 12px 32px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(255, 100, 0, 0.3);
+        }
+
+        #fireBtn:hover {
+            background: linear-gradient(180deg, #ff8800, #ee4400);
+            box-shadow: 0 0 30px rgba(255, 100, 0, 0.5);
+            transform: scale(1.05);
+        }
+
+        #fireBtn:disabled {
+            background: #333;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        #message.show {
+            opacity: 1;
+        }
+
+        #turnIndicator {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            pointer-events: none;
+        }
+
+        #restartBtn {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, #00aa88, #007766);
+            border: none;
+            color: #fff;
+            padding: 14px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: none;
+            box-shadow: 0 0 25px rgba(0, 170, 136, 0.4);
+            transition: all 0.2s;
+        }
+
+        #restartBtn:hover {
+            background: linear-gradient(180deg, #00cc99, #009977);
+            box-shadow: 0 0 35px rgba(0, 170, 136, 0.6);
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+        }
+
+        #startScreen h1 {
+            font-size: 52px;
+            margin-bottom: 10px;
+            background: linear-gradient(180deg, #00c8ff, #0066cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            letter-spacing: 6px;
+        }
+
+        #startScreen p {
+            color: #88aacc;
+            margin-bottom: 30px;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        #startBtn {
+            background: linear-gradient(180deg, #00c8ff, #0066cc);
+            border: none;
+            color: #fff;
+            padding: 16px 50px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        #startBtn:hover {
+            box-shadow: 0 0 50px rgba(0, 200, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            color: #667788;
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="700"></canvas>
+
+        <div id="ui">
+            <div class="player-info player1">
+                <h3>Jugador</h3>
+                <p>Tu nave</p>
+            </div>
+            <div class="player-info player2">
+                <h3>Ordenador</h3>
+                <p>IA enemiga</p>
+            </div>
+        </div>
+
+        <div id="turnIndicator"></div>
+
+        <div id="controls">
+            <div class="control-group">
+                <label>Angulo</label>
+                <input type="range" id="angleSlider" min="0" max="360" value="45">
+                <span class="value-display" id="angleValue">45°</span>
+            </div>
+            <div class="control-group">
+                <label>Potencia</label>
+                <input type="range" id="powerSlider" min="50" max="500" value="200">
+                <span class="value-display" id="powerValue">200</span>
+            </div>
+            <button id="fireBtn">Disparar</button>
+        </div>
+
+        <div id="message"></div>
+        <button id="restartBtn">Nueva Partida</button>
+
+        <div id="startScreen">
+            <h1>STAR WARS</h1>
+            <p>Batalla Espacial</p>
+            <button id="startBtn">Jugar</button>
+            <div class="instructions">
+                Ajusta el angulo y la potencia para disparar misiles a la nave enemiga.<br>
+                Cuidado con los campos gravitatorios de los objetos cosmicos.<br>
+                Si impactas tu propia nave, pierdes.
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ============================================================
+    // STAR WARS - Batalla Espacial
+    // ============================================================
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // UI Elements
+    const angleSlider = document.getElementById('angleSlider');
+    const powerSlider = document.getElementById('powerSlider');
+    const angleValue = document.getElementById('angleValue');
+    const powerValue = document.getElementById('powerValue');
+    const fireBtn = document.getElementById('fireBtn');
+    const messageEl = document.getElementById('message');
+    const turnIndicator = document.getElementById('turnIndicator');
+    const controlsEl = document.getElementById('controls');
+    const restartBtn = document.getElementById('restartBtn');
+    const startScreen = document.getElementById('startScreen');
+    const startBtn = document.getElementById('startBtn');
+
+    // ============================================================
+    // GAME STATE
+    // ============================================================
+    let gameState = 'start'; // start, playerTurn, playerFiring, aiTurn, aiFiring, gameOver
+    let stars = []; // background stars
+    let cosmicObjects = [];
+    let ship1 = null; // jugador
+    let ship2 = null; // ordenador
+    let missile = null;
+    let missileTrail = [];
+    let particles = [];
+    let explosions = [];
+    let turnCount = 0;
+
+    // AI state
+    let aiAngle = 0;
+    let aiPower = 0;
+    let aiAttempts = [];
+    let aiBestAttempt = null;
+    let aiThinking = false;
+
+    // ============================================================
+    // BACKGROUND STARS
+    // ============================================================
+    function generateBackgroundStars() {
+        stars = [];
+        for (let i = 0; i < 300; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2.5 + 0.5,
+                brightness: Math.random(),
+                twinkleSpeed: Math.random() * 0.02 + 0.005,
+                twinkleOffset: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    function drawBackgroundStars(time) {
+        stars.forEach(star => {
+            const twinkle = 0.5 + 0.5 * Math.sin(time * star.twinkleSpeed + star.twinkleOffset);
+            const alpha = star.brightness * twinkle;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.fill();
+        });
+    }
+
+    // ============================================================
+    // COSMIC OBJECTS
+    // ============================================================
+    const COSMIC_TYPES = [
+        {
+            name: 'Estrella',
+            minRadius: 25,
+            maxRadius: 45,
+            massMultiplier: 3000,
+            colors: ['#ffdd44', '#ffaa00', '#ff8800'],
+            glow: '#ffaa00',
+            glowSize: 2.5
+        },
+        {
+            name: 'Planeta',
+            minRadius: 18,
+            maxRadius: 35,
+            massMultiplier: 1500,
+            colors: ['#4488ff', '#22cc88', '#cc6644', '#aa66cc'],
+            glow: '#4488ff',
+            glowSize: 1.3
+        },
+        {
+            name: 'Agujero Negro',
+            minRadius: 15,
+            maxRadius: 30,
+            massMultiplier: 6000,
+            colors: ['#110022', '#220033', '#000000'],
+            glow: '#6600cc',
+            glowSize: 3.0
+        },
+        {
+            name: 'Enana Blanca',
+            minRadius: 12,
+            maxRadius: 22,
+            massMultiplier: 4000,
+            colors: ['#eeeeff', '#ccddff', '#aabbee'],
+            glow: '#ccddff',
+            glowSize: 2.0
+        },
+        {
+            name: 'Nebulosa',
+            minRadius: 30,
+            maxRadius: 55,
+            massMultiplier: 800,
+            colors: ['#ff44aa', '#aa22ff', '#4466ff'],
+            glow: '#cc44ff',
+            glowSize: 2.8
+        }
+    ];
+
+    function generateCosmicObjects() {
+        cosmicObjects = [];
+        const count = Math.floor(Math.random() * 7) + 2; // 2 a 8 objetos
+        const margin = 120;
+
+        for (let i = 0; i < count; i++) {
+            const type = COSMIC_TYPES[Math.floor(Math.random() * COSMIC_TYPES.length)];
+            const radius = type.minRadius + Math.random() * (type.maxRadius - type.minRadius);
+            const color = type.colors[Math.floor(Math.random() * type.colors.length)];
+
+            let x, y, tooClose;
+            let attempts = 0;
+            do {
+                x = margin + Math.random() * (canvas.width - margin * 2);
+                y = margin + Math.random() * (canvas.height - margin * 2);
+                tooClose = false;
+
+                // No colocar cerca de las naves
+                if (x < 180 || x > canvas.width - 180) tooClose = true;
+
+                // No colocar cerca de otros objetos
+                for (const obj of cosmicObjects) {
+                    const dist = Math.hypot(x - obj.x, y - obj.y);
+                    if (dist < obj.radius + radius + 60) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                attempts++;
+            } while (tooClose && attempts < 100);
+
+            if (attempts < 100) {
+                cosmicObjects.push({
+                    x, y, radius,
+                    type: type.name,
+                    mass: radius * type.massMultiplier,
+                    color,
+                    glow: type.glow,
+                    glowSize: type.glowSize,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.01,
+                    pulseOffset: Math.random() * Math.PI * 2
+                });
+            }
+        }
+    }
+
+    function drawCosmicObject(obj, time) {
+        ctx.save();
+        ctx.translate(obj.x, obj.y);
+        obj.rotation += obj.rotationSpeed;
+
+        const pulse = 1 + 0.08 * Math.sin(time * 0.003 + obj.pulseOffset);
+
+        // Glow effect
+        const glowRadius = obj.radius * obj.glowSize * pulse;
+        const gradient = ctx.createRadialGradient(0, 0, obj.radius * 0.3, 0, 0, glowRadius);
+
+        if (obj.type === 'Agujero Negro') {
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+            gradient.addColorStop(0.4, 'rgba(20, 0, 40, 0.8)');
+            gradient.addColorStop(0.7, 'rgba(100, 0, 200, 0.3)');
+            gradient.addColorStop(1, 'rgba(100, 0, 200, 0)');
+
+            // Accretion disk
+            ctx.save();
+            ctx.rotate(obj.rotation * 3);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, obj.radius * 2.2, obj.radius * 0.6, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(150, 50, 255, ${0.3 + 0.1 * Math.sin(time * 0.005)})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(0, 0, obj.radius * 1.8, obj.radius * 0.5, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(200, 100, 255, ${0.2 + 0.1 * Math.sin(time * 0.007)})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        } else if (obj.type === 'Estrella') {
+            gradient.addColorStop(0, '#fff');
+            gradient.addColorStop(0.2, obj.color);
+            gradient.addColorStop(0.6, obj.glow + '88');
+            gradient.addColorStop(1, obj.glow + '00');
+
+            // Corona rays
+            ctx.save();
+            ctx.rotate(obj.rotation);
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const rayLen = obj.radius * (1.5 + 0.5 * Math.sin(time * 0.004 + i));
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(angle) * rayLen, Math.sin(angle) * rayLen);
+                ctx.strokeStyle = `rgba(255, 200, 50, ${0.15})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        } else if (obj.type === 'Nebulosa') {
+            gradient.addColorStop(0, obj.color + 'aa');
+            gradient.addColorStop(0.4, obj.color + '55');
+            gradient.addColorStop(0.7, obj.glow + '22');
+            gradient.addColorStop(1, obj.glow + '00');
+        } else {
+            gradient.addColorStop(0, '#fff');
+            gradient.addColorStop(0.3, obj.color);
+            gradient.addColorStop(0.7, obj.glow + '44');
+            gradient.addColorStop(1, obj.glow + '00');
+        }
+
+        ctx.beginPath();
+        ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Core
+        if (obj.type !== 'Nebulosa') {
+            ctx.beginPath();
+            ctx.arc(0, 0, obj.radius, 0, Math.PI * 2);
+            const coreGrad = ctx.createRadialGradient(
+                -obj.radius * 0.3, -obj.radius * 0.3, 0,
+                0, 0, obj.radius
+            );
+
+            if (obj.type === 'Agujero Negro') {
+                coreGrad.addColorStop(0, '#110011');
+                coreGrad.addColorStop(1, '#000');
+            } else if (obj.type === 'Planeta') {
+                coreGrad.addColorStop(0, lightenColor(obj.color, 40));
+                coreGrad.addColorStop(1, obj.color);
+                // Atmospheric ring
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(0, 0, obj.radius + 4, 0, Math.PI * 2);
+                ctx.strokeStyle = obj.color + '33';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.restore();
+            } else {
+                coreGrad.addColorStop(0, '#fff');
+                coreGrad.addColorStop(0.5, lightenColor(obj.color, 30));
+                coreGrad.addColorStop(1, obj.color);
+            }
+
+            ctx.fillStyle = coreGrad;
+            ctx.fill();
+        }
+
+        // Gravity field indicator (subtle rings)
+        const fieldAlpha = 0.06 + 0.03 * Math.sin(time * 0.002 + obj.pulseOffset);
+        for (let r = 1; r <= 3; r++) {
+            ctx.beginPath();
+            ctx.arc(0, 0, obj.radius + r * 25 * pulse, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(150, 180, 255, ${fieldAlpha / r})`;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 8]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Label
+        ctx.fillStyle = 'rgba(180, 200, 220, 0.6)';
+        ctx.font = '10px "Segoe UI"';
+        ctx.textAlign = 'center';
+        ctx.fillText(obj.type, 0, obj.radius + 20);
+
+        ctx.restore();
+    }
+
+    // ============================================================
+    // SHIPS
+    // ============================================================
+    function createShips() {
+        const yCenter = canvas.height / 2;
+        ship1 = {
+            x: 80,
+            y: yCenter + (Math.random() - 0.5) * 200,
+            size: 20,
+            color: '#00c8ff',
+            glowColor: 'rgba(0, 200, 255, 0.3)',
+            alive: true,
+            label: 'Jugador'
+        };
+        ship2 = {
+            x: canvas.width - 80,
+            y: yCenter + (Math.random() - 0.5) * 200,
+            size: 20,
+            color: '#ff5050',
+            glowColor: 'rgba(255, 80, 80, 0.3)',
+            alive: true,
+            label: 'Ordenador'
+        };
+    }
+
+    function drawShip(ship, time, facingRight) {
+        if (!ship.alive) return;
+
+        ctx.save();
+        ctx.translate(ship.x, ship.y);
+
+        // Engine glow
+        const enginePulse = 0.5 + 0.5 * Math.sin(time * 0.01);
+        const engineGlow = ctx.createRadialGradient(0, 0, 5, 0, 0, ship.size * 2);
+        engineGlow.addColorStop(0, ship.glowColor);
+        engineGlow.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(0, 0, ship.size * 2, 0, Math.PI * 2);
+        ctx.fillStyle = engineGlow;
+        ctx.fill();
+
+        // Ship body (triangle-ish spaceship)
+        const dir = facingRight ? 1 : -1;
+        ctx.beginPath();
+        ctx.moveTo(dir * ship.size * 1.5, 0);                    // nose
+        ctx.lineTo(dir * -ship.size * 0.8, -ship.size * 0.9);    // top wing
+        ctx.lineTo(dir * -ship.size * 0.4, -ship.size * 0.2);    // top indent
+        ctx.lineTo(dir * -ship.size * 0.4, ship.size * 0.2);     // bottom indent
+        ctx.lineTo(dir * -ship.size * 0.8, ship.size * 0.9);     // bottom wing
+        ctx.closePath();
+
+        const bodyGrad = ctx.createLinearGradient(dir * -ship.size, -ship.size, dir * ship.size, ship.size);
+        bodyGrad.addColorStop(0, lightenColor(ship.color, 30));
+        bodyGrad.addColorStop(1, ship.color);
+        ctx.fillStyle = bodyGrad;
+        ctx.fill();
+        ctx.strokeStyle = lightenColor(ship.color, 50);
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Cockpit
+        ctx.beginPath();
+        ctx.arc(dir * ship.size * 0.4, 0, ship.size * 0.25, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(dir * ship.size * 0.4, 0, ship.size * 0.18, 0, Math.PI * 2);
+        ctx.fillStyle = lightenColor(ship.color, 60);
+        ctx.fill();
+
+        // Engine flame
+        const flameLen = ship.size * (0.5 + enginePulse * 0.5);
+        ctx.beginPath();
+        ctx.moveTo(dir * -ship.size * 0.4, -ship.size * 0.15);
+        ctx.lineTo(dir * (-ship.size * 0.4 - flameLen), 0);
+        ctx.lineTo(dir * -ship.size * 0.4, ship.size * 0.15);
+        ctx.closePath();
+        const flameGrad = ctx.createLinearGradient(dir * -ship.size * 0.4, 0, dir * (-ship.size * 0.4 - flameLen), 0);
+        flameGrad.addColorStop(0, '#fff');
+        flameGrad.addColorStop(0.3, ship.color);
+        flameGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = flameGrad;
+        ctx.fill();
+
+        // Shield indicator (subtle)
+        ctx.beginPath();
+        ctx.arc(0, 0, ship.size * 1.4, 0, Math.PI * 2);
+        ctx.strokeStyle = ship.color + '22';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // ============================================================
+    // MISSILE
+    // ============================================================
+    function fireMissile(fromShip, angle, power) {
+        const angleRad = angle * Math.PI / 180;
+        const speed = power / 50;
+
+        missile = {
+            x: fromShip.x,
+            y: fromShip.y,
+            vx: Math.cos(angleRad) * speed,
+            vy: -Math.sin(angleRad) * speed,
+            alive: true,
+            owner: fromShip,
+            age: 0
+        };
+        missileTrail = [];
+    }
+
+    function updateMissile() {
+        if (!missile || !missile.alive) return;
+
+        // Apply gravity from cosmic objects
+        for (const obj of cosmicObjects) {
+            const dx = obj.x - missile.x;
+            const dy = obj.y - missile.y;
+            const distSq = dx * dx + dy * dy;
+            const dist = Math.sqrt(distSq);
+
+            if (dist > 5) {
+                const force = obj.mass / distSq;
+                missile.vx += (dx / dist) * force * 0.015;
+                missile.vy += (dy / dist) * force * 0.015;
+            }
+        }
+
+        missile.x += missile.vx;
+        missile.y += missile.vy;
+        missile.age++;
+
+        // Trail
+        missileTrail.push({ x: missile.x, y: missile.y, life: 1.0 });
+        if (missileTrail.length > 200) missileTrail.shift();
+
+        // Check collisions with cosmic objects
+        for (const obj of cosmicObjects) {
+            const dist = Math.hypot(missile.x - obj.x, missile.y - obj.y);
+            if (dist < obj.radius + 3) {
+                missile.alive = false;
+                createExplosion(missile.x, missile.y, obj.glow || '#ffaa00', 15);
+                return 'cosmic_hit';
+            }
+        }
+
+        // Grace period: ignore collision with own ship for the first 30 frames
+        const GRACE_PERIOD = 30;
+
+        // Check collision with ships
+        const distToShip1 = Math.hypot(missile.x - ship1.x, missile.y - ship1.y);
+        const distToShip2 = Math.hypot(missile.x - ship2.x, missile.y - ship2.y);
+
+        const skipShip1 = (missile.owner === ship1 && missile.age < GRACE_PERIOD);
+        const skipShip2 = (missile.owner === ship2 && missile.age < GRACE_PERIOD);
+
+        if (!skipShip1 && distToShip1 < ship1.size * 1.3 && ship1.alive) {
+            missile.alive = false;
+            ship1.alive = false;
+            createExplosion(ship1.x, ship1.y, ship1.color, 40);
+            return 'ship1_hit';
+        }
+
+        if (!skipShip2 && distToShip2 < ship2.size * 1.3 && ship2.alive) {
+            missile.alive = false;
+            ship2.alive = false;
+            createExplosion(ship2.x, ship2.y, ship2.color, 40);
+            return 'ship2_hit';
+        }
+
+        // Out of bounds
+        if (missile.x < -100 || missile.x > canvas.width + 100 ||
+            missile.y < -100 || missile.y > canvas.height + 100) {
+            missile.alive = false;
+            return 'out_of_bounds';
+        }
+
+        return null;
+    }
+
+    function drawMissile(time) {
+        // Trail
+        for (let i = 0; i < missileTrail.length; i++) {
+            const t = missileTrail[i];
+            t.life -= 0.008;
+            if (t.life <= 0) continue;
+
+            const alpha = t.life * 0.6;
+            const isPlayer = missile && missile.owner === ship1;
+            const trailColor = isPlayer ? `rgba(0, 200, 255, ${alpha})` : `rgba(255, 80, 80, ${alpha})`;
+
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 2 * t.life, 0, Math.PI * 2);
+            ctx.fillStyle = trailColor;
+            ctx.fill();
+        }
+
+        // Remove dead trail points
+        missileTrail = missileTrail.filter(t => t.life > 0);
+
+        if (!missile || !missile.alive) return;
+
+        // Missile glow
+        const isPlayer = missile.owner === ship1;
+        const missileColor = isPlayer ? '#00c8ff' : '#ff5050';
+        const glowGrad = ctx.createRadialGradient(missile.x, missile.y, 2, missile.x, missile.y, 15);
+        glowGrad.addColorStop(0, '#fff');
+        glowGrad.addColorStop(0.3, missileColor);
+        glowGrad.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(missile.x, missile.y, 15, 0, Math.PI * 2);
+        ctx.fillStyle = glowGrad;
+        ctx.fill();
+
+        // Missile core
+        ctx.beginPath();
+        ctx.arc(missile.x, missile.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+    }
+
+    // ============================================================
+    // PARTICLES & EXPLOSIONS
+    // ============================================================
+    function createExplosion(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 4 + 1;
+            particles.push({
+                x, y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.0,
+                decay: Math.random() * 0.02 + 0.01,
+                size: Math.random() * 4 + 2,
+                color
+            });
+        }
+        explosions.push({ x, y, radius: 5, maxRadius: 60 + count, life: 1.0, color });
+    }
+
+    function updateParticles() {
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.98;
+            p.vy *= 0.98;
+            p.life -= p.decay;
+        });
+        particles = particles.filter(p => p.life > 0);
+
+        explosions.forEach(e => {
+            e.radius += (e.maxRadius - e.radius) * 0.1;
+            e.life -= 0.03;
+        });
+        explosions = explosions.filter(e => e.life > 0);
+    }
+
+    function drawParticles() {
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+            ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
+            ctx.fill();
+        });
+
+        explosions.forEach(e => {
+            const grad = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.radius);
+            grad.addColorStop(0, e.color + Math.floor(e.life * 100).toString(16).padStart(2, '0'));
+            grad.addColorStop(1, 'transparent');
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        });
+    }
+
+    // ============================================================
+    // AIMING PREVIEW (shows direction arrow)
+    // ============================================================
+    function drawAimingPreview() {
+        if (gameState !== 'playerTurn') return;
+
+        const angle = parseFloat(angleSlider.value);
+        const power = parseFloat(powerSlider.value);
+        const angleRad = angle * Math.PI / 180;
+
+        const len = power / 5;
+
+        ctx.save();
+        ctx.translate(ship1.x, ship1.y);
+
+        // Direction line
+        const endX = Math.cos(angleRad) * len;
+        const endY = -Math.sin(angleRad) * len;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = 'rgba(0, 200, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Arrow head
+        const arrowSize = 8;
+        const arrowAngle = Math.atan2(endY, endX);
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(
+            endX - Math.cos(arrowAngle - 0.4) * arrowSize,
+            endY - Math.sin(arrowAngle - 0.4) * arrowSize
+        );
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(
+            endX - Math.cos(arrowAngle + 0.4) * arrowSize,
+            endY - Math.sin(arrowAngle + 0.4) * arrowSize
+        );
+        ctx.strokeStyle = 'rgba(0, 200, 255, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Power indicator circle
+        ctx.beginPath();
+        ctx.arc(0, 0, len, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0, 200, 255, 0.1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // ============================================================
+    // AI LOGIC
+    // ============================================================
+    function aiTurn() {
+        aiThinking = true;
+
+        // AI strategy: simulate several shots and pick the best one
+        // The AI progressively improves its aim over multiple turns
+        let bestDist = Infinity;
+        let bestAngle = 0;
+        let bestPower = 0;
+
+        // Calculate direct angle to target as starting point
+        const dx = ship1.x - ship2.x;
+        const dy = ship1.y - ship2.y;
+        const directAngle = Math.atan2(-dy, dx) * 180 / Math.PI;
+        const directDist = Math.hypot(dx, dy);
+
+        // Number of simulations based on difficulty (increases with turns)
+        const simCount = Math.min(50 + turnCount * 10, 200);
+
+        for (let i = 0; i < simCount; i++) {
+            // Generate angle and power around the direct line with some randomness
+            let testAngle, testPower;
+
+            if (aiBestAttempt && Math.random() < 0.6) {
+                // Refine best attempt
+                testAngle = aiBestAttempt.angle + (Math.random() - 0.5) * 40;
+                testPower = aiBestAttempt.power + (Math.random() - 0.5) * 100;
+            } else {
+                // Explore around direct angle
+                testAngle = directAngle + (Math.random() - 0.5) * 120;
+                testPower = 100 + Math.random() * 400;
+            }
+
+            testPower = Math.max(50, Math.min(500, testPower));
+
+            const result = simulateShot(ship2, testAngle, testPower);
+
+            if (result.dist < bestDist) {
+                bestDist = result.dist;
+                bestAngle = testAngle;
+                bestPower = testPower;
+            }
+        }
+
+        aiBestAttempt = { angle: bestAngle, power: bestPower, dist: bestDist };
+
+        // Add some inaccuracy that decreases over turns
+        const inaccuracy = Math.max(5, 30 - turnCount * 3);
+        aiAngle = bestAngle + (Math.random() - 0.5) * inaccuracy;
+        aiPower = Math.max(50, Math.min(500, bestPower + (Math.random() - 0.5) * inaccuracy));
+
+        // Delay before firing
+        setTimeout(() => {
+            aiThinking = false;
+            gameState = 'aiFiring';
+            fireMissile(ship2, aiAngle, aiPower);
+        }, 1200);
+    }
+
+    function simulateShot(fromShip, angle, power) {
+        const angleRad = angle * Math.PI / 180;
+        const speed = power / 50;
+
+        let mx = fromShip.x;
+        let my = fromShip.y;
+        let vx = Math.cos(angleRad) * speed;
+        let vy = -Math.sin(angleRad) * speed;
+
+        let minDist = Infinity;
+        const targetShip = fromShip === ship2 ? ship1 : ship2;
+
+        for (let step = 0; step < 500; step++) {
+            // Apply gravity
+            for (const obj of cosmicObjects) {
+                const ddx = obj.x - mx;
+                const ddy = obj.y - my;
+                const distSq = ddx * ddx + ddy * ddy;
+                const dist = Math.sqrt(distSq);
+
+                if (dist > 5) {
+                    const force = obj.mass / distSq;
+                    vx += (ddx / dist) * force * 0.015;
+                    vy += (ddy / dist) * force * 0.015;
+                }
+
+                // Hit cosmic object
+                if (dist < obj.radius + 3) {
+                    return { dist: Infinity };
+                }
+            }
+
+            mx += vx;
+            my += vy;
+
+            // Distance to target
+            const distToTarget = Math.hypot(mx - targetShip.x, my - targetShip.y);
+            if (distToTarget < minDist) {
+                minDist = distToTarget;
+            }
+
+            // Hit target
+            if (distToTarget < targetShip.size * 1.3) {
+                return { dist: 0 };
+            }
+
+            // Hit self
+            if (step > 5) {
+                const distToSelf = Math.hypot(mx - fromShip.x, my - fromShip.y);
+                if (distToSelf < fromShip.size * 1.3) {
+                    return { dist: Infinity }; // Avoid self-hit
+                }
+            }
+
+            // Out of bounds
+            if (mx < -100 || mx > canvas.width + 100 || my < -100 || my > canvas.height + 100) {
+                break;
+            }
+        }
+
+        return { dist: minDist };
+    }
+
+    // ============================================================
+    // GAME FLOW
+    // ============================================================
+    function startGame() {
+        startScreen.style.display = 'none';
+        generateBackgroundStars();
+        generateCosmicObjects();
+        createShips();
+        missile = null;
+        missileTrail = [];
+        particles = [];
+        explosions = [];
+        turnCount = 0;
+        aiBestAttempt = null;
+        aiAttempts = [];
+        gameState = 'playerTurn';
+        messageEl.className = '';
+        messageEl.textContent = '';
+        restartBtn.style.display = 'none';
+        controlsEl.classList.remove('hidden');
+        fireBtn.disabled = false;
+        updateTurnIndicator();
+    }
+
+    function handleMissileResult(result) {
+        if (!result) return;
+
+        const currentTurnIsPlayer = (gameState === 'playerFiring');
+
+        if (result === 'ship1_hit') {
+            // Ship 1 (jugador) hit
+            gameState = 'gameOver';
+            showMessage('El Ordenador gana!', '#ff5050');
+            endGame();
+        } else if (result === 'ship2_hit') {
+            // Ship 2 (ordenador) hit
+            gameState = 'gameOver';
+            showMessage('El Jugador gana!', '#00c8ff');
+            endGame();
+        } else if (result === 'cosmic_hit' || result === 'out_of_bounds') {
+            // Missed - next turn
+            setTimeout(() => {
+                if (gameState === 'gameOver') return;
+                turnCount++;
+                if (currentTurnIsPlayer) {
+                    gameState = 'aiTurn';
+                    updateTurnIndicator();
+                    aiTurn();
+                } else {
+                    gameState = 'playerTurn';
+                    updateTurnIndicator();
+                    controlsEl.classList.remove('hidden');
+                    fireBtn.disabled = false;
+                }
+            }, 800);
+        }
+    }
+
+    function showMessage(text, color) {
+        messageEl.textContent = text;
+        messageEl.style.color = color;
+        messageEl.className = 'show';
+    }
+
+    function endGame() {
+        controlsEl.classList.add('hidden');
+        restartBtn.style.display = 'block';
+    }
+
+    function updateTurnIndicator() {
+        if (gameState === 'playerTurn') {
+            turnIndicator.textContent = `Turno ${turnCount + 1} - Tu turno`;
+            turnIndicator.style.color = '#00c8ff';
+        } else if (gameState === 'aiTurn' || gameState === 'aiFiring') {
+            turnIndicator.textContent = `Turno ${turnCount + 1} - Turno del ordenador`;
+            turnIndicator.style.color = '#ff5050';
+        } else if (gameState === 'playerFiring') {
+            turnIndicator.textContent = `Turno ${turnCount + 1} - Misil en vuelo...`;
+            turnIndicator.style.color = '#ffcc00';
+        } else if (gameState === 'gameOver') {
+            turnIndicator.textContent = 'Fin de la partida';
+            turnIndicator.style.color = '#fff';
+        }
+    }
+
+    // ============================================================
+    // EVENT HANDLERS
+    // ============================================================
+    angleSlider.addEventListener('input', () => {
+        angleValue.textContent = angleSlider.value + '°';
+    });
+
+    powerSlider.addEventListener('input', () => {
+        powerValue.textContent = powerSlider.value;
+    });
+
+    fireBtn.addEventListener('click', () => {
+        if (gameState !== 'playerTurn') return;
+
+        const angle = parseFloat(angleSlider.value);
+        const power = parseFloat(powerSlider.value);
+
+        gameState = 'playerFiring';
+        fireBtn.disabled = true;
+        updateTurnIndicator();
+
+        fireMissile(ship1, angle, power);
+    });
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    // ============================================================
+    // MAIN GAME LOOP
+    // ============================================================
+    let lastTime = 0;
+
+    function gameLoop(timestamp) {
+        const time = timestamp || 0;
+
+        // Clear
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw background
+        drawBackgroundStars(time);
+
+        // Draw cosmic objects
+        cosmicObjects.forEach(obj => drawCosmicObject(obj, time));
+
+        // Draw ships
+        if (ship1) drawShip(ship1, time, true);
+        if (ship2) drawShip(ship2, time, false);
+
+        // Draw aiming preview
+        drawAimingPreview();
+
+        // Update and draw missile
+        if (missile && missile.alive) {
+            const result = updateMissile();
+            if (result) {
+                handleMissileResult(result);
+            }
+        }
+        drawMissile(time);
+
+        // Update and draw particles
+        updateParticles();
+        drawParticles();
+
+        // AI thinking indicator
+        if (aiThinking) {
+            ctx.fillStyle = '#ff5050';
+            ctx.font = '14px "Segoe UI"';
+            ctx.textAlign = 'center';
+            const dots = '.'.repeat(Math.floor(time / 400) % 4);
+            ctx.fillText(`Ordenador calculando${dots}`, canvas.width / 2, canvas.height - 30);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ============================================================
+    // UTILITY
+    // ============================================================
+    function lightenColor(hex, amount) {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+        const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + amount);
+        const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + amount);
+        const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + amount);
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Start the render loop
+    requestAnimationFrame(gameLoop);
+
+    </script>
+</body>
+</html>
